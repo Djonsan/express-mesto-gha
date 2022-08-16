@@ -16,9 +16,6 @@ const router = require('./routes');
 
 const { PORT = 3000 } = process.env;
 
-app.use((req, res) => {
-  res.status(404).send({ message: 'Страница не найдена' });
-});
 app.use(bodyParser.json());
 app.use(router);
 
