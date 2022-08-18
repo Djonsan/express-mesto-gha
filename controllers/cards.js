@@ -9,8 +9,7 @@ const createCard = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(BAD_REQUEST).send({ message: 'Переданы некорректные данные при создании карточки.' });
-      }
-        return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' });
+      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' });
     });
 };
 
@@ -40,7 +39,7 @@ const likeCard = (req, res) => Card.findByIdAndUpdate(
   .then((cards) => {
     if (!cards) {
       return res.status(NOT_FOUND).send({ message: 'Карточка с указанным _id не найдена' });
-    } return res.send({ data: cardds });
+    } return res.send({ data: cards });
   })
   .catch((err) => {
     if (err.name === 'CastError') {
