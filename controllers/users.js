@@ -1,84 +1,59 @@
 const User = require('../models/user');
+const { BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR } = require('../utils/constants');
 
 const getUsers = (req, res) => {
   User.find({})
-    .then((users) => res.send(users))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .then((users) => res.send({ data: users }))
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' }));
 };
 
 const getUserById = (req, res) => {
-  const { userId } = req.params;
-  User.findById(userId)
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({ message: 'Пользователь по указанному _id не найден.' });
-      }
-      return res.send(user);
+  User.findById(req.params.userId)
+    .then((userId) => {
+      if (!userId) {
+        return res.status(NOT_FOUND).send({ message: 'Пользователь по указанному _id не найден.' });
+      } return res.send({ data: userId });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
-      } else {
-        res.status(500).send({ message: 'Произошла ошибка' });
-      }
+        return res.status(BAD_REQUEST).send({ message: 'Переданы некорректные данные' });
+      } return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' });
     });
 };
 
 const createUser = (req, res) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
-    .then((user) => res.send(user))
+    .then((newUser) => res.send({ data: newUser }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Переданы неправильные данные',
-        });
-      } else {
-        res.status(500).send({ message: 'Произошла ошибка' });
+        return res.status(BAD_REQUEST).send({ message: 'Переданы неправильные данные' });
       }
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' });
     });
 };
 
 const updateUser = (req, res) => {
-  const newUserName = req.body.name;
-  const newUserAbout = req.body.about;
-  const userId = req.user._id;
-  User.findByIdAndUpdate(userId, { name: newUserName, about: newUserAbout }, { new: true })
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({ message: 'Пользователь по указанному _id не найден.' });
-      }
-      return res.send('Данные профиля обновлены');
-    })
+  const { name, about } = req.body;
+  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
+    .then((updatedUser) => res.send({ data: updatedUser }))
     .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        return res.status(400).send({
-          message: 'Переданы неправильные данные',
-        });
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({ message: 'Переданы неправильные данные' });
       }
-      return res.status(500).send({ message: 'Произошла ошибка' });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' });
     });
 };
 
 const updateAvatar = (req, res) => {
-  const newUserAvatar = req.body.avatar;
-  const userId = req.user._id;
-  User.findByIdAndUpdate(userId, { avatar: newUserAvatar }, { new: true })
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({ message: 'Пользователь по указанному _id не найден.' });
-      }
-      return res.send('Аватар обновлен');
-    })
+  const { avatar } = req.body;
+  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+    .then((updatedUser) => res.send({ data: updatedUser }))
     .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        return res.status(400).send({
-          message: 'Переданы неправильные данные',
-        });
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({ message: 'Переданы неправильные данные' });
       }
-      return res.status(500).send({ message: 'Произошла ошибка' });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка' });
     });
 };
 
