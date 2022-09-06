@@ -1,146 +1,70 @@
-const { celebrate, Joi } = require('celebrate');
-const { ObjectId } = require('mongoose').Types;
 const validator = require('validator');
+const { celebrate, Joi } = require('celebrate');
+const ValidationError = require('../errors/ValidationError');
 
-const validateGetUsers = celebrate({
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
-});
+const checkUrl = (url) => {
+  const result = validator.isURL(url);
+  if (result) {
+    return url;
+  }
+  throw new ValidationError('Веден некорректный URL');
+};
 
-const validateGetUserById = celebrate({
-  params: Joi.object().keys({
-    userId: Joi.string().required().custom((value, helpers) => {
-      if (ObjectId.isValid(value)) {
-        return value;
-      }
-      return helpers.message('Невалидный id пользователя');
-    }),
-  }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
-});
-
-const validateCreateUser = celebrate({
+const createCardValidate = celebrate({
   body: Joi.object().keys({
+    name: Joi.string().required().min(2).max(30),
+    link: Joi.string().required().custom(checkUrl),
+  }),
+});
+
+const signupValidate = celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
-    email: Joi.string().required(),
-    password: Joi.string().required().min(8),
+    avatar: Joi.string().custom(checkUrl),
   }),
 });
 
-const validateUpdateUser = celebrate({
+const signinValidate = celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(30),
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
   }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
 });
 
-const validateUpdateAvatar = celebrate({
+const userInfoValidate = celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().custom((value, helpers) => {
-      if (validator.isURL(value)) {
-        return value;
-      }
-      return helpers.message('Поле "avatar" должно быть валидным url-адресом');
-    })
-      .messages({
-        'any.required': 'Поле "avatar" должно быть заполнено',
-      }),
-  }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
-});
-
-const validateLogin = celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required(),
-    password: Joi.string().required().min(8),
+    name: Joi.string().required().min(2).max(30),
+    about: Joi.string().required().min(2).max(30),
   }),
 });
 
-const validateGetUserInfo = celebrate({
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
-});
-
-const validateGetCards = celebrate({
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
-});
-
-const validateDeleteCard = celebrate({
+const userIdValidate = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().required().custom((value, helpers) => {
-      if (ObjectId.isValid(value)) {
-        return value;
-      }
-      return helpers.message('Невалидный id карточки');
-    }),
+    id: Joi.string().hex().length(24).required(),
   }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
 });
 
-const validateCreateCard = celebrate({
+const cardIdValidate = celebrate({
+  params: Joi.object().keys({
+    id: Joi.string().alphanum().hex().length(24),
+  }),
+});
+
+const avatarUrlValidate = celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    link: Joi.string().required(),
+    avatar: Joi.string().custom(checkUrl),
   }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
-});
-
-const validateLikeCard = celebrate({
-  params: Joi.object().keys({
-    cardId: Joi.string().required().custom((value, helpers) => {
-      if (ObjectId.isValid(value)) {
-        return value;
-      }
-      return helpers.message('Невалидный id карточки');
-    }),
-  }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
-});
-
-const validateDislikeCard = celebrate({
-  params: Joi.object().keys({
-    cardId: Joi.string().required().custom((value, helpers) => {
-      if (ObjectId.isValid(value)) {
-        return value;
-      }
-      return helpers.message('Невалидный id карточки');
-    }),
-  }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().min(2).max(200).required(),
-  }).unknown(),
 });
 
 module.exports = {
-  validateGetUsers,
-  validateGetUserById,
-  validateUpdateUser,
-  validateCreateUser,
-  validateUpdateAvatar,
-  validateLogin,
-  validateGetUserInfo,
-  validateGetCards,
-  validateDeleteCard,
-  validateCreateCard,
-  validateLikeCard,
-  validateDislikeCard,
+  createCardValidate,
+  signupValidate,
+  signinValidate,
+  userInfoValidate,
+  userIdValidate,
+  cardIdValidate,
+  avatarUrlValidate,
 };

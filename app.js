@@ -1,36 +1,45 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 require('dotenv').config();
 const express = require('express');
-const helmet = require('helmet');
 const mongoose = require('mongoose');
-const rateLimit = require('express-rate-limit');
-const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 const { errors } = require('celebrate');
-const errorHandler = require('./middlewares/error-handler');
+const NotFoundError = require('./errors/NotFoundError');
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
+const { login, createUser } = require('./controllers/users');
+const { signupValidate, signinValidate } = require('./middlewares/validations');
+const auth = require('./middlewares/auth');
+const error = require('./middlewares/error');
 
-mongoose.connect('mongodb://localhost:27017/mydb', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  autoIndex: true,
-});
-
-const app = express();
-const router = require('./routes');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const { PORT = 3000 } = process.env;
+const app = express();
 
-app.use(helmet());
-app.use(limiter);
+app.use(cookieParser());
+app.use(express.json());
 
-app.use(bodyParser.json());
-app.use(router);
+mongoose.connect('mongodb://localhost:27017/mydb');
+
+app.use(requestLogger);
+
+app.post('/signup', signupValidate, createUser);
+app.post('/signin', signinValidate, login);
+
+app.use(auth);
+
+app.use('/users', require('./routes/users'));
+app.use('/cards', require('./routes/cards'));
+
+app.use(errorLogger);
+
+app.use('*', (req, res, next) => {
+  next(new NotFoundError('Запрашиваеме данные не найдены'));
+});
 
 app.use(errors());
+app.use(error);
 
-app.use(errorHandler);
-
-app.listen(PORT, () => {});
+app.listen(PORT, () => {
+  console.log(`Запущено через порт ${PORT}`);
+});
