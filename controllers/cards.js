@@ -37,7 +37,8 @@ const deleteCard = (req, res, next) => {
         next(new ForbiddenError('Можно удалять только свои карточки'));
       } else {
         Card.findByIdAndRemove(req.params.id)
-          .then((removedCard) => res.send(removedCard));
+          .then((removedCard) => res.send(removedCard))
+          .catch(next);
       }
     })
     .catch((err) => {
